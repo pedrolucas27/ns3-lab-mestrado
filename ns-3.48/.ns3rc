@@ -1,0 +1,10 @@
+# Configuração mínima para desenvolvimento de experimentos.
+# Exemplos e testes desabilitados para acelerar compilação.
+
+set(ns3rc_enabled_modules)
+
+set(ns3rc_disabled_modules)
+
+set(ns3rc_examples_enabled OFF)
+
+set(ns3rc_tests_enabled OFF)

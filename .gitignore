@@ -1,0 +1,19 @@
+# Artefatos de compilação do ns-3
+ns-3.48/build/
+ns-3.48/cmake-cache/
+ns-3.48/.lock-ns3_linux_build
+
+# Arquivo compactado (já extraído)
+ns-3.48.tar.bz2
+
+# Editores e SO
+*~
+*.swp
+.vscode/
+.idea/
+.DS_Store
+
+# Saídas de experimentos
+results/
+*.pcap
+*.tr
