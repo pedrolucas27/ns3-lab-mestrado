@@ -67,6 +67,19 @@ Experimento hello-simulator executado com sucesso.
 | `make rebuild` | Reconfigura e recompila do zero |
 | `make help` | Mostra todos os comandos |
 
+### Criar e executar um experimento novo
+
+1. Coloque um `.cc` com `main()` em `experiments/` (symlink em `ns-3.48/scratch/experiments`). O `experiments/CMakeLists.txt` gera um executável por arquivo; sem ele o ns-3 recusa dois `main()` na mesma pasta.
+2. Inclua módulos com `"ns3/<modulo>-module.h"` (ex.: `"ns3/applications-module.h"` para eco UDP). Não use includes de sistema como `<udp-echo-helper.h>`.
+3. Compile e rode pelo nome **sem** `.cc`:
+
+```bash
+make list
+make run EXP=simulator-1
+```
+
+`make run` já chama `make build` antes. Detalhes e erros comuns: [docs/estrutura.md](docs/estrutura.md#criar-novos-experimentos).
+
 ### Executar um experimento específico
 
 ```bash
@@ -113,7 +126,11 @@ make rebuild
 
 ```bash
 make list
-make build
+make run EXP=nome-do-arquivo-sem-extensao
 ```
+
+**Dois `main()` na pasta `experiments/`:** o `experiments/CMakeLists.txt` precisa existir. Depois: `make configure build`.
+
+**Erro de compilação (`fatal error: ... file not found`):** o include está errado. Use `"ns3/<modulo>-module.h"` (ex.: `"ns3/applications-module.h"`), nunca `<udp-echo-helper.h>`.
 
 Para mais detalhes sobre estrutura, criação de experimentos e configuração do ns-3, veja [docs/estrutura.md](docs/estrutura.md).

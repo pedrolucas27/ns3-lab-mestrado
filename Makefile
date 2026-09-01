@@ -49,7 +49,7 @@ run: build
 
 list:
 	@echo "Experimentos disponíveis:"
-	@ls -1 experiments/*.cc 2>/dev/null | xargs -n1 basename | sed 's/\.cc$$//' | sed 's/^/  - /'
+	@find experiments -name '*.cc' -printf '%P\n' 2>/dev/null | sed 's/\.cc$$//' | sed 's/^/  - /'
 
 clean:
 	$(NS3) clean

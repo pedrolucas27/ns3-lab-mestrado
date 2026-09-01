@@ -10,15 +10,16 @@ ns3-lab-mestrado/
 ├── README.md             # Instruções de compilação e execução
 ├── docs/
 │   └── estrutura.md      # Este documento
-├── experiments/          # Seus programas de simulação (.cc)
-│   └── hello-simulator.cc
+├── experiments/          # Seus programas de simulação
+│   ├── CMakeLists.txt    # Um executável por .cc
+│   ├── hello-simulator.cc
 ├── scripts/
 │   └── check-deps.sh     # Verifica dependências do sistema
-├── results/              # Saídas de experimentos (ignorado pelo git)
+├── results/              # Saídas de experimentos 
 └── ns-3.48/              # Código-fonte do simulador
     ├── .ns3rc            # Config mínima (sem exemplos/testes)
-    ├── build/            # Binários compilados (ignorado pelo git)
-    ├── cmake-cache/      # Cache do CMake (ignorado pelo git)
+    ├── build/            # Binários compilados 
+    ├── cmake-cache/      # Cache do CMake 
     └── scratch/
         └── experiments → ../../experiments  (symlink)
 ```
@@ -48,11 +49,9 @@ Os arquivos em `experiments/` **não** ficam dentro do diretório `ns-3.48/`. Em
 ns-3.48/scratch/experiments  →  ../../experiments
 ```
 
-Isso permite:
+Isso permite manter o código dos experimentos versionado na raiz, separado do ns-3.
 
-- Manter o código dos experimentos versionado na raiz do repositório, separado do código-fonte do ns-3.
-- O ns-3 detectar automaticamente cada `.cc` com função `main()` em `scratch/experiments/` e gerar um executável independente.
-- Subpastas também funcionam (ex.: `experiments/rede/wifi-test.cc` → `make run EXP=rede/wifi-test`).
+Subpastas funcionam: `experiments/rede/wifi-test.cc` → `make run EXP=rede/wifi-test`.
 
 ### Makefile - variáveis principais
 
@@ -63,10 +62,6 @@ Isso permite:
 | `EXP` | `hello-simulator` | Nome do experimento a executar |
 | `RUN_ARGS` | *(vazio)* | Argumentos repassados ao executável |
 
-### Script de dependências
-
-`scripts/check-deps.sh` verifica a presença de `g++`, `cmake`, `python3` e `ninja` (ou `make`) antes de configurar o ns-3. É invocado automaticamente por `make configure` e também pode ser chamado diretamente com `make deps`.
-
 ## Criar novos experimentos
 
 1. Crie um arquivo `.cc` em `experiments/` com função `main()`:
@@ -75,15 +70,15 @@ Isso permite:
 cp experiments/hello-simulator.cc experiments/meu-experimento.cc
 ```
 
-2. Edite o código conforme necessário.
-
-3. Compile e execute:
+3. Compile e execute (o `make run` já recompila se o `.cc` mudou):
 
 ```bash
 make run EXP=meu-experimento
 ```
 
-Cada arquivo `.cc` com `main()` vira um executável independente. O template `hello-simulator.cc` demonstra o esqueleto mínimo: inclusão de módulos, `CommandLine`, `Simulator::Run()` e `Simulator::Destroy()`.
+O `EXP` é o nome do arquivo **sem** `.cc`. Subpastas: `experiments/rede/wifi-test.cc` → `make run EXP=rede/wifi-test`.
+
+Cada arquivo `.cc` com `main()` vira um executável independente.
 
 ## Uso direto do ns3 (opcional)
 
@@ -106,54 +101,4 @@ cd ns-3.48
 
 # Depurar com gdb
 ./ns3 run experiments/hello-simulator --gdb
-```
-
-Documentação oficial:
-
-- [Guia de instalação](https://www.nsnam.org/docs/release/3.48/installation/html/quick-start.html)
-- [Tutorial](https://www.nsnam.org/docs/tutorial/html/index.html)
-- [Manual CMake](https://www.nsnam.org/docs/manual/html/working-with-cmake.html)
-
-## Configuração mínima (.ns3rc)
-
-O arquivo `ns-3.48/.ns3rc` desabilita exemplos e testes do ns-3 para acelerar a compilação. Todos os módulos padrão permanecem habilitados.
-
-Para habilitar exemplos ou testes:
-
-```bash
-cd ns-3.48
-./ns3 configure --enable-examples --enable-tests
-```
-
-## Notas
-
-- **Logs (`NS_LOG_*`)**: desabilitados no perfil `release`. Use `std::cout` para saída garantida ou compile com `BUILD_PROFILE=default`.
-- **Artefatos de build**: ficam em `ns-3.48/build/` e `ns-3.48/cmake-cache/` (ignorados pelo git).
-- **Resultados**: salve traces, PCAPs etc. em `results/` (também ignorado pelo git).
-
-## Solução de problemas
-
-**Erro de dependências:**
-
-```bash
-make deps
-```
-
-**Build inconsistente após mudanças:**
-
-```bash
-make rebuild
-```
-
-**Experimento não encontrado:**
-
-```bash
-make list
-make build
-```
-
-**Reconfigurar após adicionar módulo ou subpasta com CMakeLists.txt:**
-
-```bash
-make configure build
 ```

@@ -1,0 +1,5 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}/ns-3.48",
+    "cmake.buildDirectory": "${workspaceFolder}/ns-3.48/cmake-cache",
+    "cmake.configureOnOpen": false
+}

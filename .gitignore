@@ -3,15 +3,19 @@ ns-3.48/build/
 ns-3.48/cmake-cache/
 ns-3.48/.lock-ns3_linux_build
 
+# Build gerado na raiz pelo CMake Tools do VS Code/Cursor (não usar)
+/build/
+
 # Arquivo compactado (já extraído)
 ns-3.48.tar.bz2
 
 # Editores e SO
 *~
 *.swp
-.vscode/
 .idea/
 .DS_Store
+.cursor
+ns-3.48/.vscode/
 
 # Saídas de experimentos
 results/
