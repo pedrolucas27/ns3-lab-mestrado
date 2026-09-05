@@ -12,7 +12,7 @@ public:
 
     bool canProcessRequestLocally(Ptr<EnergyBuffer> energyBuffer, double energyConsumptionPerRequest, bool isForwarded);
 
-    void registerPacketForwarded(); //!< Chamado quando este dispositivo encaminha um pacote a um vizinho
+    void registerPacketForwarded(); //!< Chamado quando o dispositivo encaminha um pacote a um vizinho
 
     void printResults();
 

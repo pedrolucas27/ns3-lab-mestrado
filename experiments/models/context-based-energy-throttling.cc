@@ -21,9 +21,9 @@ void ContextBasedEnergyThrottling::printResults(){
     NS_LOG_INFO("Solicitações recebidas (total): " << m_received);
     NS_LOG_INFO("  - Reencaminhadas por outro nó: " << m_received_forwarded);
     NS_LOG_INFO("Solicitações processadas/aceitas (total): " << m_accepted);
-    NS_LOG_INFO("  - Entre as aceitas, foram reencaminhadas: " << m_accepted_forwarded);
+    NS_LOG_INFO("  - Entre as aceitas, quantas foram de nós vizinhos: " << m_accepted_forwarded);
     NS_LOG_INFO("Solicitações rejeitadas (total): " << m_rejected);
-    NS_LOG_INFO("  - Entre as rejeitadas, foram reencaminhadas: " << m_rejected_forwarded);
+    NS_LOG_INFO("  - Entre as rejeitadas, quantas foram de nós vizinhos: " << m_rejected_forwarded);
     NS_LOG_INFO("Pacotes encaminhados por este dispositivo: " << m_sent_forwarded);
 }
 
