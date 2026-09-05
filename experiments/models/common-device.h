@@ -26,14 +26,6 @@ class CommonDevice : public SimpleRefCount<CommonDevice> {
      */
     CommonDevice(Ptr<Node> node, double initialEnergy, double capacity);
 
-    bool consumeEnergy(double amount);
-
-    void recharge(double energy);
-
-    bool hasEnergy();
-
-    double getEnergyAmount();
-
     Ptr<Node> getNode();
 
     void addNeighbor(Ptr<CommonDevice> neighbor);
@@ -46,12 +38,22 @@ class CommonDevice : public SimpleRefCount<CommonDevice> {
 
     void printStats();
 
+    void start();
+
   private:
     Ptr<Node> m_node;                                 //!< Nó associado em rede
+    
     Ptr<EnergyBuffer> m_energy_buffer;                //!< Buffer de energia
+    
     std::vector<Ptr<CommonDevice>> m_neighbors;       //!< Vizinhos do dispositivo
+    
     Ptr<Socket> m_forward_socket; //!< Socket usado para encaminhar pacotes a vizinhos
+    
     ContextBasedEnergyThrottling m_energy_throttling; //!< Estratégia de controle de energia
+
+    void harvestTick(); //!< Método de colheita de energia acionado periodicamente
+    
+    void idleTick();    //!< Método de consumo de energia
 };
 
 } // namespace ns3

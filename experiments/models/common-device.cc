@@ -1,5 +1,6 @@
 #include "common-device.h"
 
+#include "ns3/core-module.h"
 #include "ns3/log.h"
 #include "ns3/packet.h"
 #include "ns3/ipv4.h"
@@ -11,7 +12,9 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE("CommonDevice");
 
-static const double ENERGY_CONSUMPTION_PER_PACKET = 10.0;
+static const double ENERGY_CONSUMPTION_PER_PACKET = 10.0;  //!< Consumo de energia por pacote processado
+static const double NODE_IDLE_COST = 0.5;
+static const double HARVEST_ENERGY_VALUE = 3.0;
 
 /*
  Classe que herda de Tag (classe abstrata) utilizada para marcar os pacotes que foram reencaminhados, ou seja, que passaram por forwarding.
@@ -35,22 +38,6 @@ CommonDevice::CommonDevice(Ptr<Node> node, double initialEnergy, double capacity
       m_neighbors(),
       m_energy_throttling()
 {
-}
-
-bool CommonDevice::consumeEnergy(double amount){
-    return m_energy_buffer->consumeEnergy(amount);
-}
-
-void CommonDevice::recharge(double energy){
-    m_energy_buffer->recharge(energy);
-}
-
-bool CommonDevice::hasEnergy(){
-    return m_energy_buffer->hasEnergy();
-}
-
-double CommonDevice::getEnergyAmount(){
-    return m_energy_buffer->getEnergyAmount();
 }
 
 Ptr<Node> CommonDevice::getNode(){
@@ -89,7 +76,7 @@ void CommonDevice::receivePacket(Ptr<Socket> socket){
         bool canProcessLocally = m_energy_throttling.canProcessRequestLocally(m_energy_buffer, ENERGY_CONSUMPTION_PER_PACKET, isForwarded);
         if (canProcessLocally){
             NS_LOG_INFO("Dispositivo " << m_node->GetId() << ": processando pacote localmente.");
-            consumeEnergy(ENERGY_CONSUMPTION_PER_PACKET);
+            m_energy_buffer->consumeEnergy(ENERGY_CONSUMPTION_PER_PACKET);
         } else {
             NS_LOG_INFO("Dispositivo " << m_node->GetId() << ": não pode processar pacote localmente, buscando nó adjacente.");
             if(m_neighbors.size() > 0){
@@ -121,9 +108,37 @@ void CommonDevice::forwardPacket(Ptr<Packet> packet, Ptr<CommonDevice> neighbor)
     NS_LOG_INFO("Pacote encaminhado para dispositivo " << neighbor->getNode()->GetId());
 }
 
+void CommonDevice::harvestTick(){
+    // Simula a colheita de energia a cada segundo
+    bool wasOff = !m_energy_buffer->hasEnergy();
+    m_energy_buffer->recharge(HARVEST_ENERGY_VALUE);
+
+    if(wasOff && m_energy_buffer->hasEnergy()){
+        NS_LOG_INFO("Dispositivo " << m_node->GetId() << ": energia colhida, dispositivo voltou a funcionar.");
+    }
+
+    Simulator::Schedule(Seconds(1.0), &CommonDevice::harvestTick, this);
+}
+
+void CommonDevice::idleTick(){
+    // Simula o consumo de energia se houver energia disponível
+    if(m_energy_buffer->hasEnergy()){
+        m_energy_buffer->consumeEnergy(NODE_IDLE_COST);
+    } else {
+        NS_LOG_WARN("Dispositivo sem energia para consumo");
+    }
+
+    Simulator::Schedule(Seconds(1.0), &CommonDevice::idleTick, this);
+}
+
+void CommonDevice::start(){
+    Simulator::Schedule(Seconds(1.0), &CommonDevice::harvestTick, this);
+    Simulator::Schedule(Seconds(1.0), &CommonDevice::idleTick, this);
+}
+
 void CommonDevice::printStats(){
     NS_LOG_INFO("===== Estatísticas do dispositivo " << m_node->GetId() << " =====");
-    NS_LOG_INFO("Energia restante: " << getEnergyAmount());
+    NS_LOG_INFO("Energia restante: " << m_energy_buffer->getEnergyAmount());
     m_energy_throttling.printResults();
 }
 
