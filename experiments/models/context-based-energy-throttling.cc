@@ -18,13 +18,13 @@ ContextBasedEnergyThrottling::ContextBasedEnergyThrottling()
 }
 
 void ContextBasedEnergyThrottling::printResults(){
-    NS_LOG_INFO("Solicitações recebidas (total): " << m_received);
-    NS_LOG_INFO("  - Reencaminhadas por outro nó: " << m_received_forwarded);
-    NS_LOG_INFO("Solicitações processadas/aceitas (total): " << m_accepted);
-    NS_LOG_INFO("  - Entre as aceitas, quantas foram de nós vizinhos: " << m_accepted_forwarded);
-    NS_LOG_INFO("Solicitações rejeitadas (total): " << m_rejected);
-    NS_LOG_INFO("  - Entre as rejeitadas, quantas foram de nós vizinhos: " << m_rejected_forwarded);
-    NS_LOG_INFO("Pacotes encaminhados por este dispositivo: " << m_sent_forwarded);
+    NS_LOG_INFO("Solicitações avaliadas por este dispositivo (total): " << m_received);
+    NS_LOG_INFO("  - Recebidas já reencaminhadas por outro nó: " << m_received_forwarded);
+    NS_LOG_INFO("Solicitações processadas localmente/aceitas (total): " << m_accepted);
+    NS_LOG_INFO("  - Entre as aceitas, recebidas de nós vizinhos: " << m_accepted_forwarded);
+    NS_LOG_INFO("Solicitações rejeitadas localmente por falta de energia (total): " << m_rejected);
+    NS_LOG_INFO("  - Entre as rejeitadas localmente, recebidas de nós vizinhos: " << m_rejected_forwarded);
+    NS_LOG_INFO("Solicitações rejeitadas localmente e encaminhadas a um vizinho: " << m_sent_forwarded);
 }
 
 bool ContextBasedEnergyThrottling::canProcessRequestLocally(Ptr<EnergyBuffer> deviceEnergyBuffer, double energyConsumptionPerRequest, bool isForwarded){
