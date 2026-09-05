@@ -11,12 +11,12 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE("SimulatorBase"); 
+NS_LOG_COMPONENT_DEFINE("SimulatorBase");
 
-void SendPacket(Ptr<Socket> socket, Time interval) {
+void sendPacket(Ptr<Socket> socket, Time interval) {
     Ptr<Packet> packet = Create<Packet>(64);
     socket->Send(packet);
-    Simulator::Schedule(interval, &SendPacket, socket, interval);
+    Simulator::Schedule(interval, &sendPacket, socket, interval);
 }
 
 int main(int argc, char* argv[]){
@@ -24,7 +24,6 @@ int main(int argc, char* argv[]){
     LogComponentEnable("SimulatorBase", LOG_LEVEL_INFO);
     LogComponentEnable("CommonDevice", LOG_LEVEL_INFO);
     LogComponentEnable("ContextBasedEnergyThrottling", LOG_LEVEL_INFO);
-    LogComponentEnableAll(LOG_PREFIX_TIME);
 
     NS_LOG_INFO("Iniciando simulação...");
     
@@ -73,17 +72,16 @@ int main(int argc, char* argv[]){
     Ptr<Socket> clientSocket = Socket::CreateSocket(client, UdpSocketFactory::GetTypeId());
     clientSocket->Bind();
     clientSocket->Connect(InetSocketAddress(interfaces.GetAddress(1), PORT));
+    
+    common_device_1->start();
+    common_device_2->start();
 
-    Simulator::Schedule(Seconds(2.0), &SendPacket, clientSocket, Seconds(2.0));
+    Simulator::Schedule(Seconds(1), &sendPacket, clientSocket, Seconds(0.5));
 
-    Simulator::Stop(Seconds(30));
-
+    Simulator::Stop(Seconds(2000.0));
     Simulator::Run();
 
     common_device_1->printStats();
-    
-    NS_LOG_INFO("--------------------------------------------------");
-
     common_device_2->printStats();
 
     Simulator::Destroy();
