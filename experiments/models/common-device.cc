@@ -70,26 +70,27 @@ void CommonDevice::receivePacket(Ptr<Socket> socket){
 
         bool isForwarded = checkIfPacketIsForwarded(packet);
         if (isForwarded) {
-            NS_LOG_INFO("Esse pacote já foi reencaminhado por outro dispositivo.");
+            NS_LOG_INFO("Esse pacote foi reencaminhado por outro dispositivo.");
         }
 
         bool canProcessLocally = m_energy_throttling.canProcessRequestLocally(m_energy_buffer, ENERGY_CONSUMPTION_PER_PACKET, isForwarded);
         if (canProcessLocally){
             NS_LOG_INFO("Dispositivo " << m_node->GetId() << ": processando pacote localmente.");
             m_energy_buffer->consumeEnergy(ENERGY_CONSUMPTION_PER_PACKET);
-        } else {
-            NS_LOG_INFO("Dispositivo " << m_node->GetId() << ": não pode processar pacote localmente, buscando nó adjacente.");
-            if(m_neighbors.size() > 0){
-                Ptr<CommonDevice> next_neighbor = m_neighbors[0];
-                NS_LOG_INFO("Enviando pacote para o nó: " << next_neighbor->getNode()->GetId());
-
-                forwardPacket(packet, next_neighbor);
-            }
+            continue;
+        } 
+        
+        if(!m_neighbors.empty()){
+            Ptr<CommonDevice> next_neighbor = m_neighbors[0];
+            NS_LOG_INFO("Encaminhando pacote para ser processado pelo nó: " << next_neighbor->getNode()->GetId());
+            forwardPacket(packet, next_neighbor);
+            continue;
         }
+        
     }
 }
 
-void CommonDevice::forwardPacket(Ptr<Packet> packet, Ptr<CommonDevice> neighbor){    
+void CommonDevice::forwardPacket(Ptr<Packet> packet, Ptr<CommonDevice> neighbor){
     Ptr<Ipv4> ipv4 = neighbor->getNode()->GetObject<Ipv4>();
     Ipv4Address neighborAddr = ipv4->GetAddress(1, 0).GetLocal();
 
@@ -98,8 +99,10 @@ void CommonDevice::forwardPacket(Ptr<Packet> packet, Ptr<CommonDevice> neighbor)
         m_forward_socket->Bind();
     }
 
-    // Marca o pacote como reencaminhado antes de enviá-lo para o vizinho
-    packet->AddPacketTag(ForwardedTag());
+    // Marca o pacote como reencaminhado, caso ainda não tenha sido
+    if(!checkIfPacketIsForwarded(packet)) {
+        packet->AddPacketTag(ForwardedTag());
+    }
 
     m_energy_throttling.registerPacketForwarded();
 
