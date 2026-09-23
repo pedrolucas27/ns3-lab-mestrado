@@ -27,8 +27,20 @@ void ContextBasedEnergyThrottling::printResults(){
     NS_LOG_INFO("Solicitações rejeitadas localmente e encaminhadas a um vizinho: " << m_sent_forwarded);
 }
 
+EnergyMetrics ContextBasedEnergyThrottling::getMetrics() const {
+    EnergyMetrics metrics;
+    metrics.received = m_received;
+    metrics.accepted = m_accepted;
+    metrics.rejected = m_rejected;
+    metrics.received_forwarded = m_received_forwarded;
+    metrics.accepted_forwarded = m_accepted_forwarded;
+    metrics.rejected_forwarded = m_rejected_forwarded;
+    metrics.sent_forwarded = m_sent_forwarded;
+    return metrics;
+}
+
 bool ContextBasedEnergyThrottling::canProcessRequestLocally(Ptr<EnergyBuffer> deviceEnergyBuffer, double energyConsumptionPerRequest, bool isForwarded){
-    NS_LOG_INFO("Verificando se o dispositivo pode processar a solicitação localmente...");
+    NS_LOG_DEBUG("Verificando se o dispositivo pode processar a solicitação localmente...");
 
     m_received++;
     if (isForwarded) {

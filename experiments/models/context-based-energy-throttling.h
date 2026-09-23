@@ -6,6 +6,16 @@
 
 namespace ns3 {
 
+struct EnergyMetrics {
+    uint64_t received = 0;
+    uint64_t accepted = 0;
+    uint64_t rejected = 0;
+    uint64_t received_forwarded = 0;
+    uint64_t accepted_forwarded = 0;
+    uint64_t rejected_forwarded = 0;
+    uint64_t sent_forwarded = 0;
+};
+
 class ContextBasedEnergyThrottling {
 public:
     ContextBasedEnergyThrottling();
@@ -13,6 +23,8 @@ public:
     bool canProcessRequestLocally(Ptr<EnergyBuffer> energyBuffer, double energyConsumptionPerRequest, bool isForwarded);
 
     void registerPacketForwarded(); //!< Chamado quando o dispositivo encaminha um pacote a um vizinho
+
+    EnergyMetrics getMetrics() const;
 
     void printResults();
 
