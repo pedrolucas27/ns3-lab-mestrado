@@ -17,6 +17,7 @@ void runSimulation(const SimulationConfig& config, std::ofstream& metricsOutput)
     // Cada linha do CSV gera uma topologia e uma configuração energética própria.
     SimulationTopology topology = createTopology(config);
     std::vector<Ptr<CommonDevice>> energyDevices = createEnergyDevices(topology.devices, config);
+    
     createDeviceSockets(topology.devices, energyDevices);
     scheduleClientTraffic(topology.clients, topology.interfaces, config);
 
@@ -39,12 +40,12 @@ int main(int argc, char* argv[]) {
 
     std::string csvPath = (argc > 1)
         ? argv[1]
-        : "../experiments/datasets/energy_aware_network_simulation_dataset.csv";
+        : "../experiments/throttling/datasets/energy_aware_network_simulation_dataset.csv";
     std::vector<SimulationConfig> simulations = load_simulation_configs(csvPath);
 
-    std::ofstream metricsOutput("../experiments/testbed-metrics.csv");
+    std::ofstream metricsOutput("../experiments/throttling/testbed-metrics.csv");
     if (!metricsOutput.is_open()) {
-        std::cerr << "Error: could not open ../experiments/testbed-metrics.csv\n";
+        std::cerr << "Error: could not open ../experiments/throttling/testbed-metrics.csv\n";
         return 1;
     }
     writeMetricsHeader(metricsOutput);

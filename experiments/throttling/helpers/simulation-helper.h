@@ -140,12 +140,14 @@ inline SimulationTopology createTopology(const SimulationConfig& config) {
 inline std::vector<Ptr<CommonDevice>> createEnergyDevices(
     const NodeContainer& deviceNodes,
     const SimulationConfig& config) {
+
     std::vector<Ptr<CommonDevice>> devices;
     devices.reserve(deviceNodes.GetN());
 
     for (uint32_t index = 0; index < deviceNodes.GetN(); ++index) {
         devices.push_back(Create<CommonDevice>(
             deviceNodes.Get(index),
+
             config.initial_energy,
             config.energy_buffer_capacity,
             config.node_active_cost,
@@ -158,6 +160,7 @@ inline std::vector<Ptr<CommonDevice>> createEnergyDevices(
     for (const Ptr<CommonDevice>& device : devices) {
         device->setNeighbors(devices);
     }
+    
     return devices;
 }
 
