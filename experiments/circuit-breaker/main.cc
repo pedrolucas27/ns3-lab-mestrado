@@ -91,8 +91,7 @@ RunMetrics run_one(const sim::RunConfig &run){
     Simulator::Schedule(Seconds (1.0), &ClientDevice::start, client);
 
     // CommonDevice reagenda harvest/idle indefinidamente. Sem Stop, Run() nao retorna.
-    // Com request_interval < response_timeout o cliente so envia apos o timeout,
-    // entao o passo efetivo e o maximo dos dois.
+    // O CSV exige request_interval > response_timeout (uma request em voo).
     const double step = std::max(run.client.request_interval, run.client.response_timeout);
     const Time stop_time =
         Seconds(1.0)
