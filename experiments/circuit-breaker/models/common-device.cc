@@ -39,8 +39,14 @@ void CommonDevice::start()
     m_socket->Bind(InetSocketAddress(Ipv4Address::GetAny(), m_port));
     m_socket->SetRecvCallback(MakeCallback(&CommonDevice::receive_packet, this));
 
-    Simulator::Schedule(m_harvest_interval, &CommonDevice::harvest_tick, this);
-    Simulator::Schedule(m_idle_interval, &CommonDevice::idle_tick, this);
+    m_harvest_event = Simulator::Schedule(m_harvest_interval, &CommonDevice::harvest_tick, this);
+    m_idle_event = Simulator::Schedule(m_idle_interval, &CommonDevice::idle_tick, this);
+}
+
+void CommonDevice::stop()
+{
+    Simulator::Cancel(m_harvest_event);
+    Simulator::Cancel(m_idle_event);
 }
 
 bool CommonDevice::is_available() const
@@ -99,26 +105,27 @@ void CommonDevice::receive_packet(Ptr<Socket> socket)
             continue;
         }
 
+        uint8_t status = 1;
         try{
             process_request();
         } catch (const ServiceUnavailableException&){
-            continue; // silencio: o cliente descobre pelo timeout
+            status = 0; // intermitencia: custo ativo maior que a energia disponivel
         }
 
-        socket->SendTo(Create<Packet>(4), 0, from);
+        socket->SendTo(Create<Packet>(&status, 1), 0, from);
     }
 }
 
 void CommonDevice::harvest_tick()
 {
     m_energy_buffer->recharge(m_harvest_energy);
-    Simulator::Schedule(m_harvest_interval, &CommonDevice::harvest_tick, this);
+    m_harvest_event = Simulator::Schedule(m_harvest_interval, &CommonDevice::harvest_tick, this);
 }
 
 void CommonDevice::idle_tick()
 {
     m_energy_buffer->consume_energy(m_idle_cost * m_idle_interval.GetSeconds());
-    Simulator::Schedule(m_idle_interval, &CommonDevice::idle_tick, this);
+    m_idle_event = Simulator::Schedule(m_idle_interval, &CommonDevice::idle_tick, this);
 }
 
 } // namespace ns3

@@ -3,13 +3,12 @@
 
 #include "energy-buffer.h"
 
+#include "ns3/event-id.h"
 #include "ns3/node.h"
 #include "ns3/nstime.h"
 #include "ns3/ptr.h"
 #include "ns3/simple-ref-count.h"
 #include "ns3/socket.h"
-
-#include <vector>
 
 namespace ns3 {
 
@@ -30,6 +29,9 @@ class CommonDevice : public SimpleRefCount<CommonDevice>
                  Time idle_interval);
 
     void start();
+
+    /** Cancela harvest/idle para a simulacao poder terminar. */
+    void stop();
 
     /** Disponivel = tem energia para atender e nao esta em crash. */
     bool is_available() const;
@@ -58,6 +60,9 @@ class CommonDevice : public SimpleRefCount<CommonDevice>
     Time m_harvest_interval;
     double m_harvest_energy;
     Time m_idle_interval;
+
+    EventId m_harvest_event;
+    EventId m_idle_event;
 
     bool m_crashed;
 };

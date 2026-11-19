@@ -34,20 +34,18 @@ struct BreakerConfig
 struct ClientConfig
 {
   double    request_interval;   // intervalo entre requests (s)
-  double    response_timeout;   // timeout de resposta (s)
-  int       total_requests;     // numero total de requests
+  int       total_requests;     // numero total de tentativas do cliente
 };
 
 struct RunConfig
 {
-  int      run_id = 0;   // posicao da linha no arquivo (1-based)
+  int      run_id = 0;
   ServerConfig  server {};
   BreakerConfig breaker {};
   ClientConfig  client {};
 };
 
-// Assume CSV bem formado: sem espacos em volta dos campos e sem linhas vazias.
-std::vector<std::string> split_line (const std::string &line){
+std::vector<std::string> split_line(const std::string &line){
   std::vector<std::string> out;
   std::string field;
   std::istringstream is (line);
@@ -55,8 +53,8 @@ std::vector<std::string> split_line (const std::string &line){
   return out;
 }
 
-// Carrega os experimentos, o acesso e por nome de coluna.
-std::vector<RunConfig> load_experiments (const std::string &path){
+// Carrega os experimentos tratando o acesso por nome de coluna.
+std::vector<RunConfig> load_experiments(const std::string &path){
   std::ifstream in (path);
   if (!in) { throw std::runtime_error ("nao foi possivel abrir: " + path); }
 
@@ -65,7 +63,7 @@ std::vector<RunConfig> load_experiments (const std::string &path){
   std::string line;
 
   while (std::getline (in, line)){
-      const auto c = split_line (line);
+      const auto c = split_line(line);
 
       if (header.empty ()){
         for (size_t i = 0; i < c.size (); ++i) { header[c[i]] = i; }
@@ -95,7 +93,6 @@ std::vector<RunConfig> load_experiments (const std::string &path){
                     u32 ("minimum_number_of_calls"),
                     u32 ("permitted_calls_in_half_open") };
       r.client  = { num ("request_interval"),
-                    num ("response_timeout"),
                     u32 ("total_requests") };
       runs.push_back(r);
     }
@@ -105,31 +102,6 @@ std::vector<RunConfig> load_experiments (const std::string &path){
   }
 
   return runs;
-}
-
-// Escreve a configuracao de um experimento, na mesma ordem do cabecalho
-// abaixo. Usado para montar o CSV de resultados.
-inline const char *kConfigHeader =
-  "run_id,"
-  "initial_energy,capacity,active_cost,idle_cost,idle_interval,"
-  "harvest_interval,harvest_energy,"
-  "open_state_duration,window_duration,failure_rate_threshold,"
-  "minimum_number_of_calls,permitted_calls_in_half_open,"
-  "request_interval,response_timeout,total_requests";
-
-inline void write_config_row (std::ostream &out, const RunConfig &r)
-{
-  out << r.run_id << ','
-      << r.server.initial_energy << ',' << r.server.capacity << ','
-      << r.server.active_cost << ',' << r.server.idle_cost << ','
-      << r.server.idle_interval << ',' << r.server.harvest_interval << ','
-      << r.server.harvest_energy << ','
-      << r.breaker.open_state_duration << ',' << r.breaker.window_duration << ','
-      << r.breaker.failure_rate_threshold << ','
-      << r.breaker.minimum_number_of_calls << ','
-      << r.breaker.permitted_calls_in_half_open << ','
-      << r.client.request_interval << ',' << r.client.response_timeout << ','
-      << r.client.total_requests;
 }
 
 } // namespace sim

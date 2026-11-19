@@ -9,22 +9,25 @@ namespace ns3{
 
 NS_LOG_COMPONENT_DEFINE("ClientDevice");
 
+namespace {
+constexpr uint8_t kResponseOk = 1;
+}
+
 ClientDevice::ClientDevice(Ptr<Node> node,
                            Address server_address,
                            Time request_interval,
-                           Time response_timeout,
                            Ptr<CircuitBreaker> breaker)
     : m_node(node),
       m_server_address(server_address),
       m_request_interval(request_interval),
-      m_response_timeout(response_timeout),
       m_breaker(breaker),
       m_total_requests(0),
-      m_waiting(false),
+      m_inflight(0),
       m_sent(0),
       m_ok(0),
       m_failed(0),
-      m_rejected(0)
+      m_rejected(0),
+      m_finished(false)
 {
 }
 
@@ -38,32 +41,42 @@ void ClientDevice::start(){
 
 void ClientDevice::stop(){
     Simulator::Cancel(m_send_event);
-    Simulator::Cancel(m_timeout_event);
     if (m_socket){
         m_socket->Close();
+        m_socket = nullptr;
+    }
+}
+
+void ClientDevice::set_server(Ptr<CommonDevice> server){
+    m_server = server;
+}
+
+bool ClientDevice::budget_exhausted() const{
+    return m_total_requests > 0 && (m_sent + m_rejected) >= m_total_requests;
+}
+
+void ClientDevice::try_finish(){
+    if (m_finished || !budget_exhausted() || m_inflight > 0){
+        return;
+    }
+
+    m_finished = true;
+    Simulator::Cancel(m_send_event);
+    if (m_server){
+        m_server->stop();
     }
 }
 
 void ClientDevice::send_request(){
-    if (m_total_requests > 0 && (m_sent + m_rejected) >= m_total_requests) {
-        Simulator::Cancel(m_send_event);
+    if (budget_exhausted()){
+        try_finish();
         return;
     }
 
-    // O dataset tem request_interval < response_timeout. Sem este guarda, a
-    // proxima sonda sobrescreve m_waiting/m_timeout_event e corrompe as metricas.
-    if (m_waiting) {
-        m_send_event = Simulator::Schedule(m_request_interval, &ClientDevice::send_request, this);
-        return;
-    }
-
-    // Bloqueado aqui, o pacote nem chega ao radio: economiza energia nas duas pontas.
     if (m_breaker->allow_request()){
         m_socket->Send(Create<Packet>(4));
         m_sent++;
-        m_waiting = true;
-        m_timeout_event =
-            Simulator::Schedule(m_response_timeout, &ClientDevice::on_timeout, this);
+        m_inflight++;
 
         NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
                         << " enviada (breaker=" << state_name(m_breaker->get_state()) << ")");
@@ -73,7 +86,11 @@ void ClientDevice::send_request(){
                         << " REJEITADA (breaker=" << state_name(m_breaker->get_state()) << ")");
     }
 
-    m_send_event = Simulator::Schedule(m_request_interval, &ClientDevice::send_request, this);
+    if (!budget_exhausted()){
+        m_send_event = Simulator::Schedule(m_request_interval, &ClientDevice::send_request, this);
+    }else{
+        try_finish();
+    }
 }
 
 void ClientDevice::handle_response(Ptr<Socket> socket){
@@ -81,27 +98,29 @@ void ClientDevice::handle_response(Ptr<Socket> socket){
     Address from;
 
     while ((packet = socket->RecvFrom(from))){
-        if (!m_waiting){
-            continue; // chegou depois do prazo: ja contabilizada como falha
+        if (m_inflight <= 0){
+            continue;
         }
 
-        m_waiting = false;
-        Simulator::Cancel(m_timeout_event);
-        m_ok++;
-        m_breaker->register_result(false);
+        m_inflight--;
 
-        NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
-                        << " resposta OK (breaker=" << state_name(m_breaker->get_state()) << ")");
+        uint8_t status = 0;
+        packet->CopyData(&status, 1);
+
+        if (status == kResponseOk){
+            m_ok++;
+            m_breaker->register_result(false);
+            NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
+                            << " resposta OK (breaker=" << state_name(m_breaker->get_state()) << ")");
+        }else{
+            m_failed++;
+            m_breaker->register_result(true);
+            NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
+                            << " FALHA ENERGIA (breaker=" << state_name(m_breaker->get_state()) << ")");
+        }
     }
-}
 
-void ClientDevice::on_timeout(){
-    m_waiting = false;
-    m_failed++;
-    m_breaker->register_result(true);
-
-    NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
-                    << " TIMEOUT (breaker=" << state_name(m_breaker->get_state()) << ")");
+    try_finish();
 }
 
 void ClientDevice::set_total_requests(int total_requests){
@@ -112,7 +131,7 @@ int ClientDevice::get_success_count() const{
     return m_ok;
 }
 
-int ClientDevice::get_timeout_count() const{
+int ClientDevice::get_failure_count() const{
     return m_failed;
 }
 
