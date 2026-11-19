@@ -26,16 +26,6 @@ class OutOfEnergyException : public ServiceUnavailableException
     }
 };
 
-/** Falha abrupta programada pelo cenario; recupera por recover(). */
-class CrashedException : public ServiceUnavailableException
-{
-  public:
-    CrashedException()
-        : ServiceUnavailableException("Dispositivo em crash")
-    {
-    }
-};
-
 } // namespace ns3
 
 #endif // SERVICE_UNAVAILABLE_EXCEPTION_H

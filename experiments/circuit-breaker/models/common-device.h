@@ -29,17 +29,7 @@ class CommonDevice : public SimpleRefCount<CommonDevice>
                  Time idle_interval);
 
     void start();
-
-    /** Cancela harvest/idle para a simulacao poder terminar. */
     void stop();
-
-    /** Disponivel = tem energia para atender e nao esta em crash. */
-    bool is_available() const;
-
-    /** Modos de falha programaveis pelo cenario. */
-    void crash();
-    void recover();
-
     double get_energy_amount() const;
     double get_min_energy() const;
     Ptr<Node> get_node() const;
@@ -63,8 +53,6 @@ class CommonDevice : public SimpleRefCount<CommonDevice>
 
     EventId m_harvest_event;
     EventId m_idle_event;
-
-    bool m_crashed;
 };
 
 } // namespace ns3

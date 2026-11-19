@@ -18,9 +18,9 @@ using namespace ns3;
 
 namespace {
 
-constexpr int kPort = 9;
+  int PORT = 9;
 
-constexpr const char *kResultHeader =
+  const char *kResultHeader =
   "run_id,"
   "success_count,failure_count,rejected_by_breaker,"
   "energy_final,energy_min";
@@ -44,20 +44,20 @@ RunMetrics run_one(const sim::RunConfig &run){
     nodes.Create (2); // 0 = cliente, 1 = servidor
 
     PointToPointHelper p2p;
-    p2p.SetDeviceAttribute ("DataRate", StringValue ("1Mbps"));
-    p2p.SetChannelAttribute ("Delay", StringValue ("5ms"));
+    p2p.SetDeviceAttribute("DataRate", StringValue ("1Mbps"));
+    p2p.SetChannelAttribute("Delay", StringValue ("5ms"));
     NetDeviceContainer devices = p2p.Install (nodes);
 
     InternetStackHelper stack;
-    stack.Install (nodes);
+    stack.Install(nodes);
 
     Ipv4AddressHelper address;
-    address.SetBase ("10.1.1.0", "255.255.255.0");
+    address.SetBase("10.1.1.0", "255.255.255.0");
     Ipv4InterfaceContainer interfaces = address.Assign(devices);
 
     Ptr<CommonDevice> server = Create<CommonDevice>(
-        nodes.Get (1),
-        kPort,
+        nodes.Get(1),
+        PORT,
         run.server.initial_energy,
         run.server.capacity,
         run.server.active_cost,
@@ -74,12 +74,12 @@ RunMetrics run_one(const sim::RunConfig &run){
         run.breaker.permitted_calls_in_half_open);
 
     Ptr<ClientDevice> client = Create<ClientDevice>(
-        nodes.Get (0),
-        InetSocketAddress(interfaces.GetAddress (1), kPort),
+        nodes.Get(0),
+        InetSocketAddress(interfaces.GetAddress(1), PORT),
         Seconds(run.client.request_interval),
-        breaker);
-    client->set_total_requests(run.client.total_requests);
-    client->set_server(server);
+        run.client.total_requests,
+        breaker,
+        server);
 
     Simulator::Schedule(Seconds (0.0), &CommonDevice::start, server);
     Simulator::Schedule(Seconds (1.0), &ClientDevice::start, client);
@@ -101,9 +101,9 @@ RunMetrics run_one(const sim::RunConfig &run){
   return m;
 }
 
-void append_result(const std::string &path, const sim::RunConfig &r, const RunMetrics &m){
+void append_result(const std::string &path, const int run_id, const RunMetrics &m){
   std::ofstream out (path, std::ios::app);
-  out << r.run_id
+  out << run_id
       << ',' << m.success_count
       << ',' << m.failure_count
       << ',' << m.rejected_by_breaker
@@ -142,12 +142,12 @@ int main (int argc, char *argv[]){
   write_header(out_file);
 
   // Executa cada experimento e anexa o resultado no CSV
-  size_t done = 0;
   for (const auto &run : runs){
-    std::cout << '[' << ++done << '/' << runs.size () << "] run "<< run.run_id << std::endl;
-    append_result(out_file, run, run_one(run));
+    std::cout << "run: "<< run.run_id << std::endl;
+    RunMetrics metrics = run_one(run);
+    append_result(out_file, run.run_id, metrics);
   }
 
-  std::cout << "concluido: " << out_file << '\n';
+  std::cout << "Resultados em: " << out_file << '\n';
   return 0;
 }
