@@ -28,8 +28,7 @@ CommonDevice::CommonDevice(Ptr<Node> node,
       m_idle_cost(idle_cost),
       m_harvest_interval(harvest_interval),
       m_harvest_energy(harvest_energy),
-      m_idle_interval(idle_interval),
-      m_crashed(false)
+      m_idle_interval(idle_interval)
 {
 }
 
@@ -49,23 +48,6 @@ void CommonDevice::stop()
     Simulator::Cancel(m_idle_event);
 }
 
-bool CommonDevice::is_available() const
-{
-    return !m_crashed && m_energy_buffer->get_energy_amount() >= m_active_cost;
-}
-
-void CommonDevice::crash()
-{
-    m_crashed = true;
-    NS_LOG_UNCOND("[" << Simulator::Now().GetSeconds() << "s] servidor em CRASH");
-}
-
-void CommonDevice::recover()
-{
-    m_crashed = false;
-    NS_LOG_UNCOND("[" << Simulator::Now().GetSeconds() << "s] servidor RECUPERADO");
-}
-
 double CommonDevice::get_energy_amount() const
 {
     return m_energy_buffer->get_energy_amount();
@@ -83,10 +65,6 @@ Ptr<Node> CommonDevice::get_node() const
 
 void CommonDevice::process_request()
 {
-    if (m_crashed){
-        throw CrashedException();
-    }
-
     if (m_energy_buffer->get_energy_amount() < m_active_cost){
         throw OutOfEnergyException();
     }

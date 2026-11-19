@@ -10,18 +10,21 @@ namespace ns3{
 NS_LOG_COMPONENT_DEFINE("ClientDevice");
 
 namespace {
-constexpr uint8_t kResponseOk = 1;
+    constexpr uint8_t kResponseOk = 1; // Byte de status enviado pelo servidor em caso de sucesso.
 }
 
 ClientDevice::ClientDevice(Ptr<Node> node,
                            Address server_address,
                            Time request_interval,
-                           Ptr<CircuitBreaker> breaker)
+                           int total_requests,
+                           Ptr<CircuitBreaker> breaker,
+                           Ptr<CommonDevice> server)
     : m_node(node),
       m_server_address(server_address),
       m_request_interval(request_interval),
+      m_total_requests(total_requests),
       m_breaker(breaker),
-      m_total_requests(0),
+      m_server(server),
       m_inflight(0),
       m_sent(0),
       m_ok(0),
@@ -31,6 +34,7 @@ ClientDevice::ClientDevice(Ptr<Node> node,
 {
 }
 
+// Liga o socket UDP, registra o callback de resposta e dispara a primeira tentativa.
 void ClientDevice::start(){
     m_socket = Socket::CreateSocket(m_node, UdpSocketFactory::GetTypeId());
     m_socket->Bind();
@@ -47,14 +51,12 @@ void ClientDevice::stop(){
     }
 }
 
-void ClientDevice::set_server(Ptr<CommonDevice> server){
-    m_server = server;
-}
-
+// Retorna se a quantidade de tentativas de requests realizadas atingiu o limite estabelecido (m_total_requests).
 bool ClientDevice::budget_exhausted() const{
     return m_total_requests > 0 && (m_sent + m_rejected) >= m_total_requests;
 }
 
+// Encerra o cenário, verificando se o orçamento de tentativas foi atingido e se não há mais pacotes em voo (m_inflight == 0).
 void ClientDevice::try_finish(){
     if (m_finished || !budget_exhausted() || m_inflight > 0){
         return;
@@ -67,6 +69,7 @@ void ClientDevice::try_finish(){
     }
 }
 
+// Envia requests e reagenda a próxima tentativa caso exista orçamento.
 void ClientDevice::send_request(){
     if (budget_exhausted()){
         try_finish();
@@ -76,8 +79,9 @@ void ClientDevice::send_request(){
     if (m_breaker->allow_request()){
         m_socket->Send(Create<Packet>(4));
         m_sent++;
-        m_inflight++;
 
+        // Saiu para a rede, mas o resultado ainda não existe.
+        m_inflight++;
         NS_LOG_INFO("[" << Simulator::Now().GetSeconds() << "s] no " << m_node->GetId()
                         << " enviada (breaker=" << state_name(m_breaker->get_state()) << ")");
     }else{
@@ -93,15 +97,18 @@ void ClientDevice::send_request(){
     }
 }
 
+// Trata resposta do servidor: 1 = OK (energia suficiente), 0 = falha.
 void ClientDevice::handle_response(Ptr<Socket> socket){
     Ptr<Packet> packet;
     Address from;
 
     while ((packet = socket->RecvFrom(from))){
+        // Verifica se não há pacotes em voo, caso sim, ignora.
         if (m_inflight <= 0){
             continue;
         }
 
+        // Decrementa o contador de pacotes em voo antes de processar a resposta.
         m_inflight--;
 
         uint8_t status = 0;
@@ -123,19 +130,15 @@ void ClientDevice::handle_response(Ptr<Socket> socket){
     try_finish();
 }
 
-void ClientDevice::set_total_requests(int total_requests){
-    m_total_requests = total_requests;
-}
-
-int ClientDevice::get_success_count() const{
+int ClientDevice::get_success_count(){
     return m_ok;
 }
 
-int ClientDevice::get_failure_count() const{
+int ClientDevice::get_failure_count(){
     return m_failed;
 }
 
-int ClientDevice::get_rejected_count() const{
+int ClientDevice::get_rejected_count(){
     return m_rejected;
 }
 

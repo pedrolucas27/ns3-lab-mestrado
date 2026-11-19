@@ -8,63 +8,46 @@
 
 namespace ns3 {
 
-// Estados do circuito:
-// CLOSED    - operação normal, requisições passam e falhas são contadas
-// OPEN      - circuito aberto, requisições são rejeitadas sem chegar ao servidor
-// HALF_OPEN - sondagem, libera uma cota limitada para testar se o serviço voltou
-enum class CircuitBreakerState {
+enum class CircuitBreakerState
+{
     CLOSED,
     OPEN,
     HALF_OPEN
 };
 
-std::string state_name(CircuitBreakerState state);
+std::string state_name(CircuitBreakerState state); // Converte o estado para string
 
-class CircuitBreaker : public SimpleRefCount<CircuitBreaker> {
-public:
-    CircuitBreaker(Time _open_state_duration, Time _window_duration, double _failure_rate_threshold, int _minimum_number_of_calls, int _permitted_calls_in_half_open);
+class CircuitBreaker : public SimpleRefCount<CircuitBreaker>
+{
+  public:
+    CircuitBreaker(Time open_state_duration,
+                   Time window_duration,
+                   double failure_rate_threshold,
+                   int minimum_number_of_calls,
+                   int permitted_calls_in_half_open);
 
-    // Retorna o estado atual do circuito
-    CircuitBreakerState get_state();
+    CircuitBreakerState get_state() const; // Estado atual.
+    bool allow_request();                  // True se a chamada pode ser enviada.
+    void register_result(bool failed);     // Contabiliza sucesso/falha e aplica transições.
 
-    // Contabiliza o resultado de uma requisição e checa se é necessário mudar de estado
-    void register_result(bool failed);
+  private:
+    void reset_window();          // Zera contadores e reinicia a janela de amostragem.
+    bool is_window_expired();     // True se a janela de amostragem já expirou.
+    bool is_open_state_expired(); // True se o tempo mínimo em OPEN já passou.
+    void open();                  // Vai para OPEN e marca o instante da abertura.
+    void close();                 // Vai para CLOSED e zera a janela.
+    void half_open();             // Vai para HALF_OPEN e zera os contadores de sondagem.
 
-    // Informa se a requisição pode passar. Em OPEN com o tempo cumprido, transiciona para HALF_OPEN e libera a sondagem
-    bool allow_request();
-
-    // Ponto de entrada: consulta allow_request, executa a requisição e registra o resultado. Retorna false se o circuito rejeitou
-    bool intercept();
-
-    // Zera os contadores e reinicia a contagem da janela de tempo
-    void reset_window();
-
-    // Verifica se a janela de contagem de falhas já venceu
-    bool is_window_expired();
-
-    // Verifica se o tempo de espera em OPEN já foi cumprido
-    bool is_open_state_expired();
-
-    // Transições de estado. open() grava o momento da abertura,
-    // close() e half_open() preparam os contadores do estado de destino
-    void open();
-    void close();
-    void half_open();
-
-private:
-    CircuitBreakerState state;              // Estado do circuito
-
-    Time open_state_duration;               // Quanto tempo o circuito permanece aberto
-    Time window_duration;                   // Janela de tempo para contar falhas
-    Time window_start_time;                 // Momento em que a janela de tempo começou
-    Time open_at;                           // Momento em que o circuito foi aberto
-
-    int total_calls;                        // Contador de chamadas totais
-    int failed_calls;                       // Contador de chamadas com falha
-    double failure_rate_threshold;          // Taxa de falha maxima que manterá o circuito fechado (fração: 0.5 == 50%)
-    int minimum_number_of_calls;            // Número mínimo de chamadas para que a taxa de falha seja considerada
-    int permitted_calls_in_half_open;       // Número de chamadas permitidas no estado HALF_OPEN
-
+    CircuitBreakerState state;        // Estado atual do circuito.
+    Time open_state_duration;         // Tempo que o circuito fica em OPEN.
+    Time window_duration;             // Tamanho da janela usada para contabilizar falhas.
+    Time window_start_time;           // Início da janela corrente.
+    Time open_at;                     // Instante em que o circuito entrou em OPEN.
+    int total_calls;                  // Chamadas concluídas na janela CLOSED ou na sondagem HALF_OPEN.
+    int failed_calls;                 // Falhas na janela CLOSED ou na sondagem HALF_OPEN.
+    double failure_rate_threshold;    // Limite de taxa de falha (fração).
+    int minimum_number_of_calls;      // Amostras mínimas em CLOSED para abrir.
+    int permitted_calls_in_half_open; // Chamadas liberadas em HALF_OPEN.
 };
 
 } // namespace ns3
