@@ -1,8 +1,11 @@
 #ifndef CONTEXT_BASED_ENERGY_THROTTLING_H
 #define CONTEXT_BASED_ENERGY_THROTTLING_H
 
-#include "ns3/ptr.h"
 #include "energy-buffer.h"
+
+#include "ns3/ptr.h"
+
+#include <cstdint>
 
 namespace ns3 {
 

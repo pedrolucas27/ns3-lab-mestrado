@@ -1,4 +1,4 @@
-# Executáveis: somente os .cc diretamente dentro de experiments/
+# Executáveis: somente os .cc na raiz deste experimento.
 file(GLOB experiment_sources CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
@@ -12,7 +12,7 @@ foreach(source_file ${experiment_sources})
 
   build_exec(
     EXECNAME ${exec_name}
-    EXECNAME_PREFIX "scratch_experiments_"
+    EXECNAME_PREFIX "scratch_experiments_circuit-breaker_"
     SOURCE_FILES
       ${source_file}
       ${model_sources}
@@ -20,7 +20,7 @@ foreach(source_file ${experiment_sources})
       "${ns3-libs}"
       "${ns3-contrib-libs}"
     EXECUTABLE_DIRECTORY_PATH
-      "${CMAKE_OUTPUT_DIRECTORY}/scratch/experiments"
+      "${CMAKE_OUTPUT_DIRECTORY}/scratch/experiments/circuit-breaker"
   )
 
 endforeach()

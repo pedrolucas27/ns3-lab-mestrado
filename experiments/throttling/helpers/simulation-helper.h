@@ -17,13 +17,14 @@
 #include "../models/router-tag.h"
 #include "../models/simulation-config.h"
 
+#include <algorithm>
 #include <cstdint>
-#include <utility>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <random>
 #include <string>
+#include <utility>
+#include <vector>
 
 const int SERVER_PORT = 4000;
 const double SERVER_SELECTION_THRESHOLD = 0.7;

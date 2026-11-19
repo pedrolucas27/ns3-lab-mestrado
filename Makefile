@@ -7,8 +7,8 @@ BUILD_PROFILE ?= default
 # Número de jobs paralelos (0 = automático)
 JOBS ?= 0
 
-# Experimento padrão para `make run`
-EXP ?= hello-simulator
+# Experimento para `make run` (ex.: throttling/main, circuit-breaker/main)
+EXP ?=
 
 # Argumentos repassados ao executar um experimento
 RUN_ARGS ?=
@@ -31,7 +31,8 @@ help:
 	@echo "Exemplos:"
 	@echo "  make configure build"
 	@echo "  make run"
-	@echo "  make run EXP=hello-simulator RUN_ARGS='--help'"
+	@echo "  make run EXP=throttling/main"
+	@echo "  make run EXP=circuit-breaker/main RUN_ARGS='--help'"
 
 deps:
 	@./scripts/check-deps.sh
@@ -45,11 +46,14 @@ build:
 rebuild: distclean configure build
 
 run: build
+ifeq ($(strip $(EXP)),)
+	$(error Informe o experimento: make run EXP=throttling/main ou EXP=circuit-breaker/main)
+endif
 	$(NS3) run experiments/$(EXP) -- $(RUN_ARGS)
 
 list:
 	@echo "Experimentos disponíveis:"
-	@find experiments -name '*.cc' -printf '%P\n' 2>/dev/null | sed 's/\.cc$$//' | sed 's/^/  - /'
+	@find experiments -name 'main.cc' -printf '%P\n' 2>/dev/null | sed 's/\.cc$$//' | sed 's/^/  - /'
 
 clean:
 	$(NS3) clean

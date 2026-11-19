@@ -2,8 +2,6 @@
 
 Ambiente preparado para desenvolver, compilar e executar simulações com o [ns-3.48](https://www.nsnam.org/) de forma automatizada.
 
-Para entender a organização do repositório e como os componentes se conectam, consulte [docs/estrutura.md](docs/estrutura.md).
-
 ## Pré-requisitos
 
 | Ferramenta | Versão mínima |
@@ -78,8 +76,6 @@ make list
 make run EXP=simulator-1
 ```
 
-`make run` já chama `make build` antes. Detalhes e erros comuns: [docs/estrutura.md](docs/estrutura.md#criar-novos-experimentos).
-
 ### Executar um experimento específico
 
 ```bash
@@ -91,46 +87,3 @@ make run EXP=hello-simulator
 ```bash
 make run EXP=hello-simulator RUN_ARGS="--help"
 ```
-
-### Perfil de compilação
-
-Por padrão usa `default` (com asserts e logging). Para simulações longas:
-
-```bash
-make configure BUILD_PROFILE=release build
-```
-
-Perfis disponíveis: `default`, `debug`, `release`, `optimized`.
-
-### Paralelismo na compilação
-
-```bash
-make build JOBS=8
-```
-
-## Solução de problemas
-
-**Erro de dependências:**
-
-```bash
-make deps
-```
-
-**Build inconsistente após mudanças:**
-
-```bash
-make rebuild
-```
-
-**Experimento não encontrado:**
-
-```bash
-make list
-make run EXP=nome-do-arquivo-sem-extensao
-```
-
-**Dois `main()` na pasta `experiments/`:** o `experiments/CMakeLists.txt` precisa existir. Depois: `make configure build`.
-
-**Erro de compilação (`fatal error: ... file not found`):** o include está errado. Use `"ns3/<modulo>-module.h"` (ex.: `"ns3/applications-module.h"`), nunca `<udp-echo-helper.h>`.
-
-Para mais detalhes sobre estrutura, criação de experimentos e configuração do ns-3, veja [docs/estrutura.md](docs/estrutura.md).
