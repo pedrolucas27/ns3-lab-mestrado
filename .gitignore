@@ -16,6 +16,7 @@ ns-3.48.tar.bz2
 .DS_Store
 .cursor
 ns-3.48/.vscode/
+.vscode
 
 # Saídas de experimentos
 results/
